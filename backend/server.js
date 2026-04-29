@@ -85,6 +85,17 @@ app.get('/', (req, res) => {
     res.json({ status: "GlobalP2P სერვერი ჩართულია 🚀" });
 });
 
+app.get('/api/rates', async (req, res) => {
+    try {
+        const realTimeApiService = new RealTimeApiService();
+        const rates = await realTimeApiService.getRealFiatRates('USD');
+        res.json({ USD: 1, ...rates });
+    } catch (error) {
+        console.error('Failed to return rates:', error);
+        res.status(500).json({ error: 'Rates unavailable' });
+    }
+});
+
 app.post('/api/transfer', async (req, res) => {
     const { amount, sendCurrency, receiveCurrency } = req.body;
     if (!amount || !sendCurrency || !receiveCurrency) {

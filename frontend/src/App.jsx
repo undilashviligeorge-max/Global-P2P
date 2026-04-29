@@ -10,13 +10,36 @@ export default function App() {
 
   const [fee, setFee] = useState(0);
   const [estimatedReceive, setEstimatedReceive] = useState(0);
+  const [rates, setRates] = useState({});
 
   const [sendCurrency, setSendCurrency] = useState('GEL');
   const [receiveCurrency, setReceiveCurrency] = useState('EUR');
 
-  const rates = { USD: 1, EUR: 0.92, GEL: 2.70, GBP: 0.79 };
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${API_URL}/api/rates`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch rates');
+        }
+        const data = await response.json();
+        setRates(data || {});
+      } catch (error) {
+        console.error('Live rates fetch failed:', error);
+      }
+    };
+
+    fetchRates();
+  }, []);
 
   useEffect(() => {
+    if (Object.keys(rates).length === 0) {
+      setFee(0);
+      setEstimatedReceive(0);
+      return;
+    }
+
     const sendAmt = parseFloat(amount);
     if (!isNaN(sendAmt) && sendAmt > 0) {
       const sendRate = rates[sendCurrency] || 1;
@@ -38,13 +61,13 @@ export default function App() {
       setFee(0);
       setEstimatedReceive(0);
     }
-  }, [amount, sendCurrency, receiveCurrency]);
+  }, [amount, sendCurrency, receiveCurrency, rates]);
+
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const handleTransfer = async (e) => {
     e.preventDefault();
     if (!amount || (mode === 'transfer' && !recipient)) return;
-
-    setTxStatus('step1_buying_usdt');
 
     try {
       // ბექენდთან კავშირი .env ცვლადის გამოყენებით
@@ -55,11 +78,17 @@ export default function App() {
         body: JSON.stringify({ amount, sendCurrency, receiveCurrency })
       });
       const data = await response.json();
-      void data;
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || data?.message || 'Transfer failed');
+      }
 
-      setTimeout(() => setTxStatus('step2_escrow_holding'), 1500);
-      setTimeout(() => setTxStatus('step3_sending_fiat'), 3000);
-      setTimeout(() => setTxStatus('success'), 4500);
+      setTxStatus('step1_buying_usdt');
+      await wait(700);
+      setTxStatus('step2_escrow_holding');
+      await wait(700);
+      setTxStatus('step3_sending_fiat');
+      await wait(700);
+      setTxStatus('success');
     } catch (error) {
       console.error("სერვერის შეცდომა", error);
       alert("ვერ დავუკავშირდით ბექენდის სერვერს.");
