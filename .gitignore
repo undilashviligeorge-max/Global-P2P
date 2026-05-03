@@ -2,9 +2,23 @@
 node_modules/
 **/node_modules/
 
-# Environment files
+# Environment
+.env
+.env.local
+.env.*.local
 backend/.env
 frontend/.env
 
-# Build output
+# Rust
+backend/target/
+**/target/
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+
+# Legacy / misc
 frontend/dist/
+*.log
+.DS_Store

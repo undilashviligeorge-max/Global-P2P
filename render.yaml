@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: p2p-remittance-backend
+    rootDir: backend
+    buildCommand: cargo build --release
+    startCommand: ./target/release/backend
