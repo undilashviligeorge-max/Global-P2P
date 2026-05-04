@@ -2,29 +2,40 @@
 
 import { FormEvent, useMemo, useState } from "react";
 
-type QuoteResponse = {
+type CalculateResponse = {
   success: boolean;
   receive_amount: number;
-  exchange_rate: number;
-  fee: number;
+  fee_eur: number;
+  cross_rate_eur_to_target: number;
+  usdc_per_eur: number;
+  usdc_per_target: number;
+  target_currency: string;
   message: string;
 };
 
-function quoteUrl(): string {
-  const base =
-    process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ??
-    "http://127.0.0.1:8080";
-  return `${base}/api/v1/quote`;
+function apiBase(): string {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (raw) return raw.replace(/\/$/, "");
+  return "http://127.0.0.1:8080";
 }
 
 export default function HomePage() {
-  const [amount, setAmount] = useState<string>("100");
-  const [fiat, setFiat] = useState<"GEL" | "USD">("GEL");
+  const [amount, setAmount] = useState("250");
+  const [recipientCountry, setRecipientCountry] = useState<"GE" | "US">("GE");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<QuoteResponse | null>(null);
+  const [result, setResult] = useState<CalculateResponse | null>(null);
 
-  const parsedAmount = useMemo(() => parseFloat(amount.replace(",", ".")), [amount]);
+  const parsedAmount = useMemo(
+    () => parseFloat(amount.replace(",", ".")),
+    [amount],
+  );
+
+  const receiveDisplay = useMemo(() => {
+    if (!result?.success) return "—";
+    const cur = result.target_currency || (recipientCountry === "GE" ? "GEL" : "USD");
+    return `${result.receive_amount.toFixed(2)} ${cur}`;
+  }, [result, recipientCountry]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -33,25 +44,21 @@ export default function HomePage() {
     setResult(null);
 
     try {
-      const res = await fetch(quoteUrl(), {
+      const url = `${apiBase()}/api/v1/calculate`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          asset: "EUR",
-          fiat,
           amount: parsedAmount,
+          recipient_country: recipientCountry,
         }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || `HTTP ${res.status}`);
-      }
-
-      const data = (await res.json()) as QuoteResponse;
+      const data = (await res.json()) as CalculateResponse;
       setResult(data);
-      if (!data.success) {
-        setError(data.message);
+
+      if (!res.ok || !data.success) {
+        setError(data.message || `HTTP ${res.status}`);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "უცნობი შეცდომა");
@@ -61,95 +68,105 @@ export default function HomePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-lg flex-col gap-8 px-4 py-12">
-      <header className="space-y-2">
-        <p className="text-sm font-medium text-slate-500">Web2.5 P2P რემიტანი</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-          სწრაფი კურსის კალკულატორი
+    <main className="relative mx-auto flex max-w-md flex-col gap-8 px-4 py-14 pb-24">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute left-1/2 top-12 h-64 w-64 -translate-x-1/2 rounded-full bg-cyan-500/15 blur-3xl" />
+      </div>
+
+      <header className="relative space-y-2 text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90">
+          Live rates · Tatum
+        </p>
+        <h1 className="bg-gradient-to-br from-white via-slate-100 to-slate-400 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
+          P2P რემიტანი
         </h1>
-        <p className="text-sm text-slate-600">
-          შეიყვანეთ თანხა ევროში და აირჩიეთ მიმღები ვალუტა. სერვისის საკომისიო ფიქსირებულია{" "}
-          <span className="font-medium text-slate-800">1 EUR</span>.
+        <p className="text-sm text-slate-400">
+          EUR → GEL / USD · საკომისიო <span className="text-emerald-400">1.00 EUR</span>
         </p>
       </header>
 
       <form
         onSubmit={onSubmit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+        className="relative space-y-6 rounded-3xl border border-white/15 bg-white/[0.06] p-7 shadow-glass backdrop-blur-xl"
       >
         <div className="space-y-2">
-          <label htmlFor="amount" className="block text-sm font-medium text-slate-800">
-            გასაგზავნი თანხა (EUR)
+          <label htmlFor="amount" className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+            გასაგზავნი (EUR)
           </label>
           <input
             id="amount"
             name="amount"
-            type="text"
             inputMode="decimal"
             autoComplete="off"
             value={amount}
             onChange={(ev) => setAmount(ev.target.value)}
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-900 outline-none ring-emerald-500/30 transition focus:border-emerald-500 focus:ring-4"
-            placeholder="მაგ: 250"
             required
+            className="w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-lg font-semibold text-white outline-none ring-cyan-400/30 placeholder:text-slate-600 focus:border-cyan-400/40 focus:ring-4"
+            placeholder="0.00"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="fiat" className="block text-sm font-medium text-slate-800">
-            მიმღები ქვეყანა (GEL/USD)
+          <label htmlFor="country" className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+            მიმღები ქვეყანა
           </label>
           <select
-            id="fiat"
-            name="fiat"
-            value={fiat}
-            onChange={(ev) => setFiat(ev.target.value as "GEL" | "USD")}
-            className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-900 outline-none ring-emerald-500/30 transition focus:border-emerald-500 focus:ring-4"
+            id="country"
+            name="recipient_country"
+            value={recipientCountry}
+            onChange={(ev) => setRecipientCountry(ev.target.value as "GE" | "US")}
+            className="w-full cursor-pointer rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-base font-medium text-white outline-none ring-violet-400/25 focus:border-violet-400/40 focus:ring-4"
           >
-            <option value="GEL">საქართველო — GEL</option>
-            <option value="USD">აშშ — USD</option>
+            <option value="GE">საქართველო (GEL)</option>
+            <option value="US">აშშ (USD)</option>
           </select>
+        </div>
+
+        <div className="space-y-2">
+          <span className="block text-xs font-medium uppercase tracking-wide text-slate-400">
+            მისაღები თანხა
+          </span>
+          <div className="flex min-h-[3.25rem] items-center rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 backdrop-blur-md">
+            <span className="text-xl font-bold text-emerald-300">{receiveDisplay}</span>
+          </div>
         </div>
 
         <button
           type="submit"
           disabled={loading || Number.isNaN(parsedAmount)}
-          className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 px-4 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {loading ? "იტვირთება…" : "საუკეთესო კურსის პოვნა"}
+          {loading ? "იტვირთება…" : "გამოთვლა"}
         </button>
       </form>
 
       {error ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <p className="relative rounded-2xl border border-red-500/30 bg-red-950/40 px-4 py-3 text-center text-sm text-red-200 backdrop-blur-md">
           {error}
         </p>
       ) : null}
 
       {result?.success ? (
-        <section className="space-y-4 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-emerald-900">
-            შედეგი
-          </h2>
-          <dl className="grid grid-cols-1 gap-3 text-sm">
+        <section className="relative space-y-3 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-300 backdrop-blur-xl">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+            დეტალები
+          </p>
+          <dl className="grid gap-2">
             <div className="flex justify-between gap-4">
-              <dt className="text-slate-600">საკომისიო</dt>
-              <dd className="font-medium text-slate-900">
-                {result.fee.toFixed(2)} EUR
+              <dt>კურსი (EUR → {result.target_currency})</dt>
+              <dd className="font-mono text-slate-100">
+                {result.cross_rate_eur_to_target.toFixed(6)}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt className="text-slate-600">კურსი (EUR → {fiat})</dt>
-              <dd className="font-medium text-slate-900">{result.exchange_rate}</dd>
+              <dt>USDC / EUR</dt>
+              <dd className="font-mono text-slate-100">{result.usdc_per_eur.toFixed(6)}</dd>
             </div>
-            <div className="flex justify-between gap-4 border-t border-emerald-200 pt-3">
-              <dt className="text-slate-700 font-medium">მისაღები თანხა</dt>
-              <dd className="text-lg font-bold text-green-600">
-                {result.receive_amount.toFixed(2)} {fiat}
-              </dd>
+            <div className="flex justify-between gap-4">
+              <dt>USDC / {result.target_currency}</dt>
+              <dd className="font-mono text-slate-100">{result.usdc_per_target.toFixed(6)}</dd>
             </div>
           </dl>
-          <p className="text-xs text-emerald-900/80">{result.message}</p>
         </section>
       ) : null}
     </main>

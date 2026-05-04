@@ -1,0 +1,16 @@
+{
+  "name": "p2p-remittance-platform",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c cyan,green \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "cargo run --manifest-path backend/Cargo.toml",
+    "dev:web": "npm run dev --prefix frontend",
+    "build": "cargo build --release --manifest-path backend/Cargo.toml && npm run build --prefix frontend",
+    "lint": "npm run lint --prefix frontend",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

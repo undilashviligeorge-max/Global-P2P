@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "P2P გზავნილი",
-  description: "Web2.5 P2P რემიტანის კალკულატორი",
+  description: "EUR → GEL / USD",
 };
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ka">
+    <html lang="ka" className="dark">
       <body>{children}</body>
     </html>
   );
