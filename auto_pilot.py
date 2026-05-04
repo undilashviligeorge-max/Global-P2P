@@ -47,6 +47,8 @@ def ensure_git_commit() -> None:
 
 def normalize_remote(url: str) -> str:
     u = url.strip().strip('"').strip("'").rstrip("/")
+    while "https://github.com/https://" in u:
+        u = u.replace("https://github.com/https://", "https://", 1)
     if not u:
         return ""
     if u.startswith("git@"):
