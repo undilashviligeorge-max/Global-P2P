@@ -38,8 +38,8 @@ struct CalculateResponse {
     receive_amount: f64,
     fee_eur: f64,
     cross_rate_eur_to_target: f64,
-    usdc_per_eur: f64,
-    usdc_per_target: f64,
+    usdt_per_eur: f64,
+    usdt_per_target: f64,
     target_currency: String,
     message: String,
 }
@@ -57,11 +57,11 @@ fn resolve_target_fiat(recipient_country: &str) -> Result<&'static str, &'static
     }
 }
 
-async fn fetch_usdc_per_unit(state: &AppState, symbol: &str) -> Result<f64, String> {
+async fn fetch_usdt_per_unit(state: &AppState, symbol: &str) -> Result<f64, String> {
     let mut url = Url::parse(TATUM_RATE_BASE).map_err(|e| e.to_string())?;
     url.query_pairs_mut()
         .append_pair("symbol", symbol)
-        .append_pair("basePair", "USDC");
+        .append_pair("basePair", "USDT");
 
     let resp = state
         .client
@@ -111,8 +111,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                 receive_amount: 0.0,
                 fee_eur,
                 cross_rate_eur_to_target: 0.0,
-                usdc_per_eur: 0.0,
-                usdc_per_target: 0.0,
+                usdt_per_eur: 0.0,
+                usdt_per_target: 0.0,
                 target_currency: String::new(),
                 message: "Missing TATUM_API_KEY on server.".into(),
             }),
@@ -130,8 +130,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                     receive_amount: 0.0,
                     fee_eur,
                     cross_rate_eur_to_target: 0.0,
-                    usdc_per_eur: 0.0,
-                    usdc_per_target: 0.0,
+                    usdt_per_eur: 0.0,
+                    usdt_per_target: 0.0,
                     target_currency: String::new(),
                     message: msg.into(),
                 }),
@@ -148,8 +148,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                 receive_amount: 0.0,
                 fee_eur,
                 cross_rate_eur_to_target: 0.0,
-                usdc_per_eur: 0.0,
-                usdc_per_target: 0.0,
+                usdt_per_eur: 0.0,
+                usdt_per_target: 0.0,
                 target_currency: target_sym.into(),
                 message: format!("amount must be greater than {fee_eur} EUR (fee)."),
             }),
@@ -157,12 +157,12 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
             .into_response();
     }
 
-    let (usdc_eur, usdc_tgt) = tokio::join!(
-        fetch_usdc_per_unit(&state, "EUR"),
-        fetch_usdc_per_unit(&state, target_sym),
+    let (usdt_eur, usdt_tgt) = tokio::join!(
+        fetch_usdt_per_unit(&state, "EUR"),
+        fetch_usdt_per_unit(&state, target_sym),
     );
 
-    let usdc_per_eur = match usdc_eur {
+    let usdt_per_eur = match usdt_eur {
         Ok(v) => v,
         Err(e) => {
             return (
@@ -172,8 +172,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                     receive_amount: 0.0,
                     fee_eur,
                     cross_rate_eur_to_target: 0.0,
-                    usdc_per_eur: 0.0,
-                    usdc_per_target: 0.0,
+                    usdt_per_eur: 0.0,
+                    usdt_per_target: 0.0,
                     target_currency: target_sym.into(),
                     message: e,
                 }),
@@ -182,7 +182,7 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
         }
     };
 
-    let usdc_per_target = match usdc_tgt {
+    let usdt_per_target = match usdt_tgt {
         Ok(v) => v,
         Err(e) => {
             return (
@@ -192,8 +192,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                     receive_amount: 0.0,
                     fee_eur,
                     cross_rate_eur_to_target: 0.0,
-                    usdc_per_eur,
-                    usdc_per_target: 0.0,
+                    usdt_per_eur,
+                    usdt_per_target: 0.0,
                     target_currency: target_sym.into(),
                     message: e,
                 }),
@@ -202,7 +202,7 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
         }
     };
 
-    let cross = usdc_per_eur / usdc_per_target;
+    let cross = usdt_per_eur / usdt_per_target;
     if !cross.is_finite() || cross <= 0.0 {
         return (
             StatusCode::BAD_GATEWAY,
@@ -211,8 +211,8 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
                 receive_amount: 0.0,
                 fee_eur,
                 cross_rate_eur_to_target: 0.0,
-                usdc_per_eur,
-                usdc_per_target,
+                usdt_per_eur,
+                usdt_per_target,
                 target_currency: target_sym.into(),
                 message: "Computed cross-rate invalid.".into(),
             }),
@@ -231,10 +231,10 @@ async fn calculate_handler(State(state): State<Arc<AppState>>, Json(req): Json<C
             receive_amount,
             fee_eur,
             cross_rate_eur_to_target: cross,
-            usdc_per_eur,
-            usdc_per_target,
+            usdt_per_eur,
+            usdt_per_target,
             target_currency: target_sym.into(),
-            message: "Calculated from live Tatum USDC crosses.".into(),
+            message: "Calculated from live Tatum USDT crosses.".into(),
         }),
     )
         .into_response()
@@ -251,7 +251,7 @@ async fn health_handler() -> impl IntoResponse {
 async fn root_handler() -> impl IntoResponse {
     (
         [(axum::http::header::CONTENT_TYPE, "text/plain; charset=utf-8")],
-        "POST /api/v1/calculate — EUR→GEL/USD via Tatum USDC crosses\nGET /health\n",
+        "POST /api/v1/calculate — EUR→GEL/USD via Tatum USDT crosses\nGET /health\n",
     )
 }
 

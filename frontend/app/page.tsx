@@ -7,8 +7,8 @@ type CalculateResponse = {
   receive_amount: number;
   fee_eur: number;
   cross_rate_eur_to_target: number;
-  usdc_per_eur: number;
-  usdc_per_target: number;
+  usdt_per_eur: number;
+  usdt_per_target: number;
   target_currency: string;
   message: string;
 };
@@ -75,7 +75,7 @@ export default function HomePage() {
 
       <header className="relative space-y-2 text-center">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90">
-          Live rates · Tatum
+          Live rates · Tatum · USDT
         </p>
         <h1 className="bg-gradient-to-br from-white via-slate-100 to-slate-400 bg-clip-text text-3xl font-bold tracking-tight text-transparent">
           P2P რემიტანი
@@ -159,12 +159,12 @@ export default function HomePage() {
               </dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>USDC / EUR</dt>
-              <dd className="font-mono text-slate-100">{result.usdc_per_eur.toFixed(6)}</dd>
+              <dt>USDT / EUR</dt>
+              <dd className="font-mono text-slate-100">{result.usdt_per_eur.toFixed(6)}</dd>
             </div>
             <div className="flex justify-between gap-4">
-              <dt>USDC / {result.target_currency}</dt>
-              <dd className="font-mono text-slate-100">{result.usdc_per_target.toFixed(6)}</dd>
+              <dt>USDT / {result.target_currency}</dt>
+              <dd className="font-mono text-slate-100">{result.usdt_per_target.toFixed(6)}</dd>
             </div>
           </dl>
         </section>
