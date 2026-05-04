@@ -2,7 +2,7 @@
 name = "backend"
 version = "0.1.0"
 edition = "2021"
-description = "P2P remittance API — Axum + Tatum exchange rates"
+description = "P2P remittance API — Axum + Tatum + optional OpenRouter P2P hints"
 
 [dependencies]
 axum = "0.7"

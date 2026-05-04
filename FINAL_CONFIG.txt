@@ -5,6 +5,11 @@
 TATUM_API_KEY=
 # Tatum Dashboard-დან API გასაღები (x-api-key).
 
+OPENROUTER_API_KEY=
+# OpenRouter გასაღები (GEL: P2P USDT/GEL დარეფinement). render.yaml-ში sync: false — Dashboard-ში ჩაწერა.
+
+OPENROUTER_MODEL=openai/gpt-4o-mini
+
 # --- Frontend build (Vercel / Netlify / სხვა — Build Environment) ---
 NEXT_PUBLIC_API_URL=
 # მაგალითი: https://p2p-remittance-backend-xxxx.onrender.com
@@ -14,6 +19,8 @@ NEXT_PUBLIC_API_URL=
 # შინაარსი backend/.env.example:
 # ---
 TATUM_API_KEY=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=openai/gpt-4o-mini
 # ---
 
 # შენიშვნა: ამ ფაილს არ უნდა მოხდეს git push სენსიტიური მნიშვნელობებით — შეავსეთ მხოლოდ Render-ზე.
