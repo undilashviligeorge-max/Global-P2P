@@ -1,0 +1,19 @@
+# FINAL_CONFIG — Render.com → Web Service → Environment
+# ჩასვით ეს გასაღებები Render Dashboard-ში (Environment Variables).
+
+# --- Backend (Rust სერვისი, render.yaml rootDir: backend) ---
+TATUM_API_KEY=
+# Tatum Dashboard-დან API გასაღები (x-api-key).
+
+# --- Frontend build (Vercel / Netlify / სხვა — Build Environment) ---
+NEXT_PUBLIC_API_URL=
+# მაგალითი: https://p2p-remittance-backend-xxxx.onrender.com
+# (ბოლოში სლეში არ დასვათ)
+
+# --- ლოკალური backend/.env შაბლონი (სურვილისამებრ) ---
+# შინაარსი backend/.env.example:
+# ---
+TATUM_API_KEY=
+# ---
+
+# შენიშვნა: ამ ფაილს არ უნდა მოხდეს git push სენსიტიური მნიშვნელობებით — შეავსეთ მხოლოდ Render-ზე.
