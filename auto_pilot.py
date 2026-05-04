@@ -107,7 +107,7 @@ def write_final_config() -> None:
     text = f"""# FINAL_CONFIG — Render.com → Web Service → Environment
 # ჩასვით ეს გასაღებები Render Dashboard-ში (Environment Variables).
 
-# --- Backend (Rust სერვისი, render.yaml rootDir: backend) ---
+# --- Backend (Rust სერვისი, render.yaml: dockerContext = repo root, Dockerfile ფაილი root-ში) ---
 TATUM_API_KEY=
 # Tatum Dashboard-დან API გასაღები (x-api-key).
 

@@ -3,8 +3,8 @@ WORKDIR /app
 
 ENV CARGO_BUILD_JOBS=1
 
-COPY Cargo.toml Cargo.lock ./
-COPY src ./src
+COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/src ./src
 
 RUN cargo build --release
 

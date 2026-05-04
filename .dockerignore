@@ -1,0 +1,9 @@
+# Repo-root backend image: keep build context small for Render / docker compose
+.git
+**/target
+frontend/node_modules
+frontend/.next
+node_modules
+backend/.env
+.env
+**/.env.local
