@@ -1,6 +1,8 @@
 FROM rust:1.84-bookworm AS chef
 WORKDIR /app
 
+ENV CARGO_BUILD_JOBS=1
+
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 

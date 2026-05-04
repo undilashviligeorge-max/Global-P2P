@@ -286,10 +286,14 @@ async fn main() {
         .layer(cors)
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    let port: u16 = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8080);
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr)
         .await
-        .expect("bind 0.0.0.0:8080");
+        .unwrap_or_else(|e| panic!("bind 0.0.0.0:{port}: {e}"));
 
     axum::serve(listener, app).await.expect("server exit");
 }
